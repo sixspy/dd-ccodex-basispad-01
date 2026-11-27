@@ -79,6 +79,71 @@ def mtm_report(user=Depends(current_user)):
         return out
 
 
+@router.get("/official-anchor")
+def official_anchor(user=Depends(current_user)):
+    """盯市页的官方结算口径锚点。
+
+    始终联查当前唯一官方单行：升正后这里必须立刻指向新批次，
+    不允许盯市面板继续挂旧官方名义。附带账实核对与费率 settled 数。
+    """
+    with connect() as conn:
+        batch = conn.execute(
+            "SELECT * FROM settle_batches "
+            "WHERE official=1 AND status='official' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        official_rows = conn.execute(
+            "SELECT COUNT(*) c FROM settle_batches WHERE official=1"
+        ).fetchone()["c"]
+        status_official_rows = conn.execute(
+            "SELECT COUNT(*) c FROM settle_batches WHERE status='official'"
+        ).fetchone()["c"]
+        if not batch:
+            return {
+                "anchored": False,
+                "official_rows": official_rows,
+                "status_official_rows": status_official_rows,
+                "reconciled": official_rows == 0,
+                "batch": None,
+                "items": [],
+                "funding_settled": conn.execute(
+                    "SELECT COUNT(*) c FROM funding_ledgers WHERE status='settled'"
+                ).fetchone()["c"],
+            }
+        items = [
+            dict(r)
+            for r in conn.execute(
+                "SELECT si.sleeve_id, si.instrument_id, si.funding_payment, si.mtm_pnl, "
+                "i.symbol FROM settle_items si LEFT JOIN instruments i ON i.id=si.instrument_id "
+                "WHERE si.batch_id=? ORDER BY si.id",
+                (batch["id"],),
+            ).fetchall()
+        ]
+        funding_settled = conn.execute(
+            "SELECT COUNT(*) c FROM funding_ledgers WHERE status='settled'"
+        ).fetchone()["c"]
+        funding_accrued = conn.execute(
+            "SELECT COUNT(*) c FROM funding_ledgers WHERE status='accrued'"
+        ).fetchone()["c"]
+        b = dict(batch)
+        return {
+            "anchored": True,
+            "reconciled": official_rows == 1 and status_official_rows == 1,
+            "official_rows": official_rows,
+            "status_official_rows": status_official_rows,
+            "batch": b,
+            "official_code": b["code"],
+            "official_id": b["id"],
+            "official_version": b["version"],
+            "official_mtm_total": b["mtm_total"],
+            "items": items,
+            "funding_settled": funding_settled,
+            "funding_accrued_pending": funding_accrued,
+            "funding_flags_synced": funding_accrued == 0,
+            "case_sign": "结算升正锁案",
+            "lock_key": "结算升正互斥",
+        }
+
+
 @router.post("/{instrument_id}/freeze")
 def freeze_mark(instrument_id: int, user=Depends(require_roles("admin"))):
     with connect() as conn:

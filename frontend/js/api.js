@@ -49,6 +49,16 @@ window.BasisAPI = (function () {
     createBatch: (body) => req("/api/settle/batches", { method: "POST", body: JSON.stringify(body) }),
     lockBatch: (id) => req("/api/settle/batches/" + id + "/lock", { method: "POST" }),
     promoteBatch: (id) => req("/api/settle/batches/" + id + "/promote", { method: "POST" }),
+    settleBook: () => req("/api/settle/book"),
+    // basispad-01：并发双请求统一入口 race_settle_promote（两路齐发，一成一拒）。
+    race_settle_promote: async (id) => {
+      const call = () => req("/api/settle/batches/" + id + "/promote", { method: "POST" })
+        .then((d) => ({ ok: true, status: 200, data: d }))
+        .catch((e) => ({ ok: false, status: e.status, error: e.message, data: e.data }));
+      return Promise.all([call(), call()]);
+    },
+    raceSettlePromote: (id) => BasisAPI.race_settle_promote(id),
+    officialAnchor: () => req("/api/marks/official-anchor"),
     riskLimits: () => req("/api/risk/limits"),
     riskRequests: () => req("/api/risk/requests"),
     createRiskReq: (body) => req("/api/risk/requests", { method: "POST", body: JSON.stringify(body) }),

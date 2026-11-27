@@ -37,15 +37,41 @@ def list_snapshots(status: str | None = None, user=Depends(current_user)):
 
 
 @router.get("/ledgers")
-def list_ledgers(snapshot_id: int | None = None, user=Depends(current_user)):
+def list_ledgers(snapshot_id: int | None = None, status: str | None = None, user=Depends(current_user)):
     sql = "SELECT * FROM funding_ledgers WHERE 1=1"
     args: list = []
     if snapshot_id:
         sql += " AND snapshot_id=?"
         args.append(snapshot_id)
+    if status:
+        sql += " AND status=?"
+        args.append(status)
     sql += " ORDER BY id DESC"
     with connect() as conn:
         return [dict(r) for r in conn.execute(sql, args).fetchall()]
+
+
+@router.get("/settle-sync")
+def settle_sync(user=Depends(current_user)):
+    """费率旗与官方结算单行的同步核对（basispad-01 三边账实的费率侧）。"""
+    with connect() as conn:
+        accrued = conn.execute(
+            "SELECT COUNT(*) c FROM funding_ledgers WHERE status='accrued'"
+        ).fetchone()["c"]
+        settled = conn.execute(
+            "SELECT COUNT(*) c FROM funding_ledgers WHERE status='settled'"
+        ).fetchone()["c"]
+        official_rows = conn.execute(
+            "SELECT COUNT(*) c FROM settle_batches WHERE official=1 AND status='official'"
+        ).fetchone()["c"]
+        # 有唯一官方单行后，不应再挂 accrued 旗；无官方批时不做此约束。
+        synced = (accrued == 0) if official_rows == 1 else True
+        return {
+            "accrued": accrued,
+            "settled": settled,
+            "official_rows": official_rows,
+            "funding_flags_synced": bool(synced),
+        }
 
 
 @router.post("/snapshots")

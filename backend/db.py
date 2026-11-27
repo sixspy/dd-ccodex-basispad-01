@@ -24,9 +24,11 @@ PRODUCT_META = {
 
 def connect() -> sqlite3.Connection:
     DATA.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=10.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
+    # basispad-01：升正互斥双请时让败方写争用痕等待胜方提交，而不是立刻 database is locked。
+    conn.execute("PRAGMA busy_timeout=5000")
     return conn
 
 

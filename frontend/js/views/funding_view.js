@@ -5,6 +5,12 @@ window.FundingView = {
     return { form: { code: "", instrument_id: "", rate: "0.0001", mark_price: "", period_start: "", period_end: "" }, err: "" };
   },
   methods: {
+    statusBadge(s) {
+      if (s === "settled") return "badge badge-green";
+      if (s === "accrued") return "badge badge-blue";
+      if (s === "void") return "badge badge-gray";
+      return "badge badge-amber";
+    },
     async create() {
       this.err = "";
       try {
@@ -47,7 +53,7 @@ window.FundingView = {
         <tbody>
           <tr v-for="r in snapshots" :key="r.id">
             <td>{{ r.code }}</td><td>{{ r.instrument_id }}</td><td>{{ r.rate }}</td><td>{{ r.mark_price }}</td>
-            <td>{{ r.status }}</td>
+            <td><span :class="statusBadge(r.status)">{{ r.status }}</span></td>
             <td><button class="btn secondary" v-if="r.status==='draft'" @click="accrue(r.id)">正式计提</button></td>
           </tr>
         </tbody>
@@ -60,7 +66,8 @@ window.FundingView = {
         <tbody>
           <tr v-for="r in ledgers" :key="r.id">
             <td>{{ r.code }}</td><td>{{ r.snapshot_id }}</td><td>{{ r.sleeve_id }}</td>
-            <td>{{ r.position_qty }}</td><td>{{ r.payment }}</td><td>{{ r.status }}</td>
+            <td>{{ r.position_qty }}</td><td>{{ r.payment }}</td>
+            <td><span :class="statusBadge(r.status)">{{ r.status }}</span></td>
           </tr>
         </tbody>
       </table>

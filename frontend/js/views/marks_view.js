@@ -2,9 +2,13 @@ window.MarksView = {
   props: ["rows", "mtm", "instruments"],
   emits: ["refresh"],
   data() {
-    return { form: { instrument_id: "", mark: "", index_price: "" }, err: "" };
+    return { form: { instrument_id: "", mark: "", index_price: "" }, err: "", anchor: null };
   },
+  async mounted() { await this.loadAnchor(); },
   methods: {
+    async loadAnchor() {
+      try { this.anchor = await BasisAPI.officialAnchor(); } catch (e) { this.anchor = null; }
+    },
     async save() {
       this.err = "";
       try {
@@ -19,6 +23,27 @@ window.MarksView = {
   },
   template: `
   <div>
+    <div class="panel" :class="anchor && anchor.reconciled ? 'panel-ok' : 'panel-bad'">
+      <h3>官方结算口径锚点（升正后必须换锚，不得沿用旧官方名义）</h3>
+      <div v-if="anchor && anchor.anchored">
+        <p class="meta">
+          当前唯一官方单行：
+          <b class="ok-text">{{ anchor.official_code }}</b>
+          <span class="meta">#{{ anchor.official_id }} · v{{ anchor.official_version }}</span>
+          ｜ 官方 MTM 合计：<b>{{ anchor.official_mtm_total }}</b>
+          ｜ 费率 settled：<b>{{ anchor.funding_settled }}</b>
+          ｜ accrued 挂账：<b :class="anchor.funding_accrued_pending ? 'bad-text' : 'ok-text'">{{ anchor.funding_accrued_pending }}</b>
+        </p>
+        <span class="badge" :class="anchor.reconciled ? 'badge-green' : 'badge-red'">
+          {{ anchor.reconciled ? '账实联查一致 · 官方单行' : '双影/账实不符' }}
+        </span>
+        <span class="badge" :class="anchor.funding_flags_synced ? 'badge-green' : 'badge-amber'" style="margin-left:8px">
+          {{ anchor.funding_flags_synced ? '费率旗已同步 settled' : '费率旗未同步' }}
+        </span>
+      </div>
+      <p v-else class="meta">暂无唯一官方结算批次（official_rows={{ anchor ? anchor.official_rows : '-' }}）。</p>
+    </div>
+
     <div class="panel">
       <h3>更新标记价</h3>
       <div class="form-grid">

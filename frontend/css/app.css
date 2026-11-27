@@ -78,3 +78,30 @@ button.btn.danger { background: var(--danger); color: #2b0d0d; }
 .tag.bad { background: #3a2020; color: var(--danger); }
 .err { color: var(--danger); font-size: 13px; margin-top: 8px; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+
+/* basispad-01 结算升正锁案：真相徽标，影子不得亮官方绿 */
+.badge {
+  display: inline-block; padding: 2px 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  border: 1px solid transparent;
+}
+.badge-green { background: #1e3a2f; color: #46d39a; border-color: #27614a; }
+.badge-blue  { background: #1f3350; color: #7db4ff; border-color: #2f4d78; }
+.badge-amber { background: #3a3020; color: #e0b454; border-color: #6b5626; }
+.badge-red   { background: #3a2024; color: #ff7a86; border-color: #7a2f3a; }
+.badge-gray  { background: #243247; color: #9fb0c6; border-color: #33445c; }
+.ok-text { color: #46d39a; }
+.bad-text { color: #ff7a86; }
+.ok-msg {
+  color: #46d39a; font-size: 13px; margin-top: 10px;
+  background: #16291f; border: 1px solid #27614a; border-radius: 8px; padding: 8px 10px;
+}
+.panel-ok { border-color: #27614a; }
+.panel-bad { border-color: #7a2f3a; }
+.row-mirage { background: rgba(255, 90, 110, 0.08); }
+.row-contend { background: rgba(224, 180, 84, 0.08); }
+.detail-cell { max-width: 520px; font-size: 12px; color: #c6d2e1; word-break: break-word; }
+.row-actions { white-space: nowrap; }
+.row-actions .btn { margin-right: 6px; }
+button.btn.warn { background: #6b5626; color: #ffe6ad; }
+.case-banner h3 { margin-bottom: 6px; }

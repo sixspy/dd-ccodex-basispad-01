@@ -44,3 +44,13 @@ python scripts/count_loc.py
 - 中心化所行情桥（`cex_bridge`）
 
 接口固定返回 501，题面可点名。
+
+## basispad-01 · 结算升正锁案
+
+主链路：**结算封批升正须锁后落官方**。口径拍板走**甲路径**（未锁定升正整笔拒写并回滚、正式官方零增），不混用乙路径、无第三写路径。
+
+- 并发占位键：**结算升正互斥**；并发双请求入口：`race_settle_promote`。
+- 锁后升正同一事务：降旧官方（official=0 且 status=demoted）＋写新官方单行＋费率置 settled，并跨表联查官方单行。
+- 案签：**结算升正锁案**；测试器〈基差甲槽〉，见红凭据〈基差甲槽专文〉：「升正锁册与官方单行须联票核销，本枪叙事独自成篇勿复用。」
+- 红测：`tests/feat_settle_lock_write.py`、`tests/feat_settle_board_mirage.py`、`tests/feat_settle_race.py`。
+- 详见 `docs/basispad-01-结算升正锁案.md`。
